@@ -33,7 +33,7 @@ Thumbs.db
 # Coverage (si tienes tests)
 coverage/
 
-
+# JSON y lock files
 backend/package-lock.json
 backend/package.json
 backend/tsconfig.json
@@ -41,4 +41,8 @@ backend/tsconfig.json
 
 frontend/package-lock.json
 frontend/tsconfig.node.json
+frontend/package.json
 README.md
+
+
+prueba.html

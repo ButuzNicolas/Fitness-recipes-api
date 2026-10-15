@@ -41,8 +41,15 @@ backend/tsconfig.json
 
 frontend/package-lock.json
 frontend/tsconfig.node.json
+frontend/tsconfig.json
 frontend/package.json
 README.md
 
 
 prueba.html
+frontend/vite.config.ts
+frontend/src/global.d.ts
+
+/backend/config/openai.ts
+
+/frontend/src/css

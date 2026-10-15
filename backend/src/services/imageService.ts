@@ -1,85 +1,65 @@
-import { openai } from '../config/openai.ts';
 import axios from 'axios';
-import dotenv from 'dotenv';
-
-
-dotenv.config();
-
-const IMAGE_PROVIDER = process.env.IMAGE_PROVIDER || 'dalle';
-
 
 export const imageService = {
-    async generateImage(prompt: string): Promise<string> {
-        if (IMAGE_PROVIDER === 'dalle'){
-            return await this.generateWithDalle(prompt);
-        }else {
-            return await this.searchWithUnsplash(prompt);
-        }
-    },
+  /**
+   * Busca una imagen real de la receta en Unsplash
+   * Usa el nombre de la receta + "food" para encontrar imágenes profesionales
+   */
+  async searchRecipeImage(recipeName: string, imagePrompt?: string): Promise<string | null> {
+    try {
+      const accessKey = process.env.UNSPLASH_ACCESS_KEY;
+      
+      if (!accessKey) {
+        console.warn('⚠️ UNSPLASH_ACCESS_KEY no configurada, usando imagen por defecto');
+        return this.getDefaultImage(recipeName);
+      }
 
-    async generateWithDalle(prompt: string): Promise<string>{
-        try {
-            const enhancedPrompt = `${prompt}, professional food photography, appetizing, well-lit, high quality, 4k`;
+      // Extraer palabras clave del nombre de la receta
+      const keywords = recipeName
+        .toLowerCase()
+        .replace(/[^\w\s]/g, '') // Eliminar caracteres especiales
+        .split(' ')
+        .filter(word => word.length > 3) // Solo palabras de más de 3 letras
+        .slice(0, 3) // Máximo 3 palabras clave
+        .join('+');
 
-            const response = await openai.images.generate({
-                model: "dall-e-3",
-                prompt: enhancedPrompt,
-                n: 1,
-                size: "1024x1024",
-                quality: "standard"
-        });
+      // Buscar en Unsplash
+      const response = await axios.get('https://api.unsplash.com/search/photos', {
+        params: {
+          query: `${keywords}+food+fitness+healthy`,
+          per_page: 1,
+          orientation: 'squarish',
+          order_by: 'relevant'
+        },
+        headers: {
+          Authorization: `Client-ID ${accessKey}`
+        },
+        timeout: 5000 // Timeout de 5 segundos
+      });
 
-            const imageUrl = response.data[0]?.url;
-            
-            if(!imageUrl){
-                throw new Error('No se ha podido generar la imaggen');
-            }
-            console.log('Imagen generada con DALL-E 3');
-            return imageUrl;
+      const imageUrl = response.data.results[0]?.urls?.regular;
+      
+      if (imageUrl) {
+        console.log('📸 Imagen encontrada en Unsplash:', recipeName);
+        return imageUrl;
+      }
 
-        } catch (error){
-            console.error('Se ha generado un error al intentanr generar la imagen con DALL-E', error);
-            throw new Error('Se genero un error al generar la imagen de la receta');
+      // Si no encontró, usar imagen por defecto
+      console.log('⚠️ No se encontró imagen, usando por defecto');
+      return this.getDefaultImage(recipeName);
 
-        }
-    },
-
-    async searchWithUnsplash(query: string): Promise<string> {
-        try {
-            const accessKey = process.env.UNSPLASH_ACCESS_KEY;
-
-            if (!accessKey) {
-                throw new Error('UNSPLASH_ACCESS_KEY no ha sido condigurada');
-
-            }
-
-            // extraccion de palabras claves del prompt
-
-            const response = await axios.get('https://api.unsplash.com/search/photos', {
-                params: {
-                    query: keywords + 'food',
-                    per_page: 1,
-                    orientation: 'squarish'
-                },
-                headers: {
-                    Authorization: `Client-ID ${accessKey}`
-                }
-            });
-
-
-            const imageUrl = response.data.results[0]?.urls?.regular;
-
-            if(!imageUrl) {
-                throw new Error('no se encontro la imagen en Unsplash');
-
-            }
-
-            console.log('Imagen extraida de Unsplash');
-            return imageUrl;
-        } catch (error) {
-            console.error('ha ahbido un error buscando la imagen en Unsplash', error);
-            throw new Error('error imagen receta');
-        }
-
+    } catch (error) {
+      console.error('❌ Error buscando imagen en Unsplash:', error);
+      return this.getDefaultImage(recipeName);
     }
+  },
+
+  /**
+   * Imagen por defecto usando Unsplash Source (sin API key)
+   * Busca imágenes genéricas de comida fitness
+   */
+  getDefaultImage(recipeName: string): string {
+    const keywords = encodeURIComponent(recipeName.split(' ').slice(0, 2).join(' '));
+    return `https://source.unsplash.com/1024x1024/?${keywords},food,fitness,healthy`;
+  }
 };

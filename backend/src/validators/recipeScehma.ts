@@ -1,7 +1,5 @@
 import {z} from 'zod';
 
-export const MealTypeSchema = z.enum(['desayuno', 'merienda', 'cena']);
-export const FitnessGoalSchema = z.enum(['perder_peso', 'ganar_musculo', 'mantener']);
 
 export const NutritionSchema = z.object({
     calories: z.number(),
@@ -14,11 +12,11 @@ export const NutritionSchema = z.object({
 export const RecipeSchema = z.object({
     recipe_name: z.string(),
     description: z.string(),
-    meal_type: MealTypeSchema,
-    fitness_goal: FitnessGoalSchema,
+    meal_type: z.enum(['desayuno', 'merienda', 'cena']),
+    fitness_goal: z.enum(['perder_peso', 'ganar_musculo', 'mantener']),
     prep_time_minutes: z.number(),
     cook_time_minutes: z.number(),
-    difficulty: z.enum(['Facil', 'Medio', 'Dificil']),
+    difficulty: z.enum(['Fácil', 'Medio', 'Difícil']),
     servings: z.number(),
     nutrition: NutritionSchema,
     ingredients_used: z.array(z.object({
@@ -42,16 +40,13 @@ export const RecipeSchema = z.object({
 
 
 export const RequestSchema = z.object({
-    ingredients: z.array(z.string()).min(1, "Debes proporcional al menos un ingrediente para poder ayudarte"),
-    meal_type: MealTypeSchema,
-    fitness_goal: FitnessGoalSchema.optional().default('mantener'),
+    ingredients: z.array(z.string()).min(1, "Debes colocar al menos un ingrediente"),
+    meal_type: z.enum(['desayuno', 'merienda', 'cena']),
+    fitness_goal: z.enum(['perder_peso', 'ganar_musculo', 'mantener']).optional().default('mantener'),
     dietary_restrictions: z.string().optional(),
-    lenguage: z.string().optional().default('es')
+    language: z.string().optional().default('es')
 });
 
-
-
 export type Recipe = z.infer<typeof RecipeSchema>;
-export type RecipeRequest = z.infer<typeof RequestSchema>;
-export type MealType = z.infer<typeof MealTypeSchema>;
-export type FitnessGoal = z.infer<typeof FitnessGoalSchema>;
+
+
